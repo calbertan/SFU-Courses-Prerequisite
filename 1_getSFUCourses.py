@@ -21,14 +21,17 @@ def fetch_courses(url):
                 dept = course.get("dept", "")
                 number = course.get("number", "")
                 prereqs = course.get("prerequisites", "")
+                offerings = course.get("offerings", [])
                 
                 # Ensure the course number is an integer
                 try:
                     number = int(number)
+                    terms = [offering.get("term", "") for offering in offerings]
                     all_courses.append({
                         "Department": dept,
                         "CourseNumber": number,
-                        "Prerequisites": prereqs
+                        "Prerequisites": prereqs,
+                        "Offerings": terms
                     })
                 except ValueError:
                     continue
@@ -55,5 +58,5 @@ df = df[(df["CourseNumber"] < 500) & (df["CourseNumber"] > 100)]
 print(df.head())
 
 # Save to CSV for further use
-df.to_csv("sfu_courses.csv", index=False)
+df.to_csv("1_sfu_courses.csv", index=False)
 print("✅ Data saved to sfu_courses.csv")

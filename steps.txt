@@ -1,0 +1,4 @@
+1_getSFUCourses.py -> generate 1_sfu_courses.csv
+2_getPrereqs.py -> filter sfu_courses.csv into 2_sfu_courses_filtered.csv
+use the prompt.txt to generate sfu_prereq.csv
+3_parsePreresqs. -> combine the dataset into 3_sfu_courses_dataset.csv

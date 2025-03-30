@@ -1,0 +1,74 @@
+Department,CourseNumber,ParsedPrerequisites
+CMPT,125,"CMPT 120 or CMPT 130, with a minimum grade of C-."
+CMPT,130,"BC Math 12 (or equivalent, or any of MATH 100, 150, 151, 154, or 157, with a minimum grade of C-)."
+CMPT,135,CMPT 130 with a minimum grade of C-.
+CMPT,201,"(CMPT 125 or CMPT 135) and MACM 101, both with a minimum grade of C-."
+CMPT,210,"MACM 101, MATH 152, CMPT 125 or CMPT 135, and (MATH 240 or MATH 232), all with a minimum grade of C-."
+CMPT,213,CMPT 225 with a minimum grade of C-.
+CMPT,225,"(MACM 101 and (CMPT 125, CMPT 129 or CMPT 135)) or (ENSC 251 and ENSC 252), all with a minimum grade of C-."
+CMPT,263,"CMPT 125 or CMPT 135, with a minimum grade of C-."
+CMPT,272,"CMPT 120 or CMPT 130 or CMPT 128, with a minimum grade of C-."
+CMPT,276,"One W course, CMPT 225, (MACM 101 or (ENSC 251 and ENSC 252)) and (MATH 151 or MATH 150), all with a minimum grade of C-. MATH 154 or MATH 157 with at least a B+ may be substituted for MATH 151 or MATH 150."
+CMPT,295,"Either (MACM 101 and (CMPT 125 or CMPT 135)) or (MATH 151 and CMPT 102 for students in an Applied Physics program), all with a minimum grade of C-."
+CMPT,300,"CMPT 225 and (CMPT 295 or ENSC 254), all with a minimum grade of C-."
+CMPT,303,"CMPT 225, (CMPT 295 or ENSC 254), and (CMPT 201 or ENSC 351), all with a minimum grade of C-."
+CMPT,305,"CMPT 225, (MACM 101 or (ENSC 251 and ENSC 252)) and (STAT 270 or STAT 271), all with a minimum grade of C-."
+CMPT,307,"CMPT 225, (MACM 201 or CMPT 210), (MATH 150 or MATH 151), and (MATH 232 or MATH 240), all with a minimum grade of C-. MATH 154 or MATH 157 with a grade of at least B+ may be substituted for MATH 150 or MATH 151."
+CMPT,310,"CMPT 225 and (MACM 101 or (ENSC 251 and ENSC 252)), all with a minimum grade of C-."
+CMPT,318,CMPT 225 with a minimum grade of C-. Additional prerequisites to be determined by the instructor subject to approval by the undergraduate program chair.
+CMPT,340,"Completion of 60 units including one of CMPT 125, 126, 128, 135, with a minimum grade of C- or CMPT 102 with a grade of B or higher."
+CMPT,353,"CMPT 225 and (BUS 232, STAT 201, STAT 203, STAT 205, STAT 270, STAT 271, ENSC 280, MSE 210, or SEE 241), with a minimum grade of C-."
+CMPT,354,"CMPT 225 and (MACM 101 or (ENSC 251 and ENSC 252)), all with a minimum grade of C-."
+CMPT,361,"CMPT 225 and MATH 232 or 240, all with a minimum grade of C-."
+CMPT,362,CMPT 225 with a minimum grade of C-.
+CMPT,363,"CMPT 225 and CMPT 263, both with a minimum grade of C-."
+CMPT,365,CMPT 225 with a minimum grade of C-.
+CMPT,371,"CMPT 225 and (MATH 151 or MATH 150), with a minimum grade of C-. MATH 154 or MATH 157 with a grade of at least B+ may be substituted for MATH 151 (MATH 150)."
+CMPT,372,"CMPT 272 and CMPT 225, both with a minimum grade of C-."
+CMPT,373,"CMPT 276 or 275, with a minimum grade of C-."
+CMPT,379,"(MACM 201 or CMPT 210), (CMPT 295 or ENSC 215) and CMPT 225, all with a minimum grade of C-."
+CMPT,383,"CMPT 225 and (MACM 101 or (ENSC 251 and ENSC 252)), all with a minimum grade of C-."
+CMPT,384,"CMPT 225 and (MACM 101 or (ENSC 251 and ENSC 252)), all with a minimum grade of C-."
+
+I need you to update the prequisite column to groups the prerequisites properly based on the AND/OR conditions. Basically parse it from natural language to a logical representation. For example, CMPT225 should have this
+"(CMPT225, CMPT295, CMPT201), (CMPT225, CMPT295, ENSC351), (CMPT225, ENSC254, CMPT201), (CMPT225, ENSC254, ENSC351)"
+remove any grade requirements or words that dont fit the "XXX####" format where XXX is department and ### is coursenumber, so remove things like bc 12 math and grade requirements. 
+
+Key Rules Applied:
+AND conditions → Comma-separated within a single group (A,B) = A AND B required.
+OR conditions → Separate groups (A),(B) = A OR B satisfies.
+Nested AND/OR → Fully expanded (e.g., (A,(B OR C)) becomes (A,B),(A,C)).
+Grade requirements and non-course text (e.g., "with a minimum grade of C-") removed.
+
+result:
+Department,CourseNumber,ParsedPrerequisites
+CMPT,125,"(CMPT120),(CMPT130)"
+CMPT,130,"(MATH100),(MATH150),(MATH151),(MATH154),(MATH157)"
+CMPT,135,"(CMPT130)"
+CMPT,201,"(CMPT125,MACM101),(CMPT135,MACM101)"
+CMPT,210,"(MACM101,MATH152,CMPT125,MATH240),(MACM101,MATH152,CMPT125,MATH232),(MACM101,MATH152,CMPT135,MATH240),(MACM101,MATH152,CMPT135,MATH232)"
+CMPT,213,"(CMPT225)"
+CMPT,225,"(MACM101,CMPT125),(MACM101,CMPT129),(MACM101,CMPT135),(ENSC251,ENSC252)"
+CMPT,263,"(CMPT125),(CMPT135)"
+CMPT,272,"(CMPT120),(CMPT130),(CMPT128)"
+CMPT,276,"(CMPT225,MACM101,MATH150),(CMPT225,MACM101,MATH151),(CMPT225,ENSC251,ENSC252,MATH150),(CMPT225,ENSC251,ENSC252,MATH151)"
+CMPT,295,"(MACM101,CMPT125),(MACM101,CMPT135),(MATH151,CMPT102)"
+CMPT,300,"(CMPT225,CMPT295),(CMPT225,ENSC254)"
+CMPT,303,"(CMPT225,CMPT295,CMPT201),(CMPT225,CMPT295,ENSC351),(CMPT225,ENSC254,CMPT201),(CMPT225,ENSC254,ENSC351)"
+CMPT,305,"(CMPT225,MACM101,STAT270),(CMPT225,MACM101,STAT271),(CMPT225,ENSC251,ENSC252,STAT270),(CMPT225,ENSC251,ENSC252,STAT271)"
+CMPT,307,"(CMPT225,MACM201,MATH150,MATH232),(CMPT225,MACM201,MATH150,MATH240),(CMPT225,MACM201,MATH151,MATH232),(CMPT225,MACM201,MATH151,MATH240),(CMPT225,CMPT210,MATH150,MATH232),(CMPT225,CMPT210,MATH150,MATH240),(CMPT225,CMPT210,MATH151,MATH232),(CMPT225,CMPT210,MATH151,MATH240)"
+CMPT,310,"(CMPT225,MACM101),(CMPT225,ENSC251,ENSC252)"
+CMPT,318,"(CMPT225)"
+CMPT,340,"(CMPT125),(CMPT126),(CMPT128),(CMPT135),(CMPT102)"
+CMPT,353,"(CMPT225,BUS232),(CMPT225,STAT201),(CMPT225,STAT203),(CMPT225,STAT205),(CMPT225,STAT270),(CMPT225,STAT271),(CMPT225,ENSC280),(CMPT225,MSE210),(CMPT225,SEE241)"
+CMPT,354,"(CMPT225,MACM101),(CMPT225,ENSC251,ENSC252)"
+CMPT,361,"(CMPT225,MATH232),(CMPT225,MATH240)"
+CMPT,362,"(CMPT225)"
+CMPT,363,"(CMPT225,CMPT263)"
+CMPT,365,"(CMPT225)"
+CMPT,371,"(CMPT225,MATH150),(CMPT225,MATH151)"
+CMPT,372,"(CMPT225,CMPT272)"
+CMPT,373,"(CMPT276),(CMPT275)"
+CMPT,379,"(MACM201,CMPT295,CMPT225),(MACM201,ENSC215,CMPT225),(CMPT210,CMPT295,CMPT225),(CMPT210,ENSC215,CMPT225)"
+CMPT,383,"(CMPT225,MACM101),(CMPT225,ENSC251,ENSC252)"
+CMPT,384,"(CMPT225,MACM101),(CMPT225,ENSC251,ENSC252)"
