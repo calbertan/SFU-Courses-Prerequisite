@@ -2,6 +2,7 @@ import pandas as pd
 import tkinter as tk
 from tkinter import ttk
 import ctypes
+import networkx as nx
 
 # Improve display quality on Windows
 try:
@@ -51,6 +52,42 @@ def update_table():
            search_term in str(row['Prerequisites']).lower():
             tree.insert("", "end", values=values, tags=(row["Prerequisites"],))  # Store actual Prerequisites in tag
 
+
+# ------------------------------- Graph work -------------------------------
+# Plan: courses = nodes, with directed edges = prerequisites
+
+
+# Build course graph
+course_graph = nx.DiGraph()
+
+# Add courses as nodes
+for _, row in df.iterrows():
+    course_name = f"{row['Department']}{row['Course Number']}"
+    course_graph.add_node(course_name)
+
+# Add edges
+for _, row in df.iterrows():
+    if row["Parsed Prerequisites"] != "N/A":
+        course_name = f"{row['Department']}{row['Course Number']}"
+        prerequisites = row["Parsed Prerequisites"].split(", ")
+        for prereq in prerequisites:
+            prereq = prereq.strip()
+            if prereq:
+                course_graph.add_edge(prereq, course_name)
+
+
+# Returns list of courses that are unlocked by the given course
+def get_unlocked_courses(course):
+    print(f"Checking unlocked courses for: {course}")
+    if course in course_graph:
+        unlocked = list(nx.descendants(course_graph, course))
+        print(f"Unlocked courses: {unlocked}")
+        return unlocked # Returns all nodes reachable from course in course_graph 
+    return []
+
+
+# ------------------------------- Tkinter UI -------------------------------
+
 def show_prerequisites(event):
     global popup_window  
 
@@ -61,6 +98,9 @@ def show_prerequisites(event):
     selected_item = tree.selection()
     if selected_item:
         actual_prerequisites = tree.item(selected_item, "tags")[0]  # Retrieve saved Prerequisites from tags
+        selected_course = tree.item(selected_item, "values")[0] + tree.item(selected_item, "values")[1] # Retrieve course number
+
+        unlocked_courses = get_unlocked_courses(selected_course)
 
         # Create a new popup window
         popup_window = tk.Toplevel(root)
@@ -72,6 +112,12 @@ def show_prerequisites(event):
 
         prereq_text = tk.Label(popup_window, text=actual_prerequisites, wraplength=550, font=("Arial", 12))
         prereq_text.pack(pady=10)
+
+        unlocked_label = tk.Label(popup_window, text="This course unlocks:", font=("Arial", 14, "bold"))
+        unlocked_label.pack(pady=10)
+
+        unlocked_text = tk.Label(popup_window, text=unlocked_courses, wraplength=550, font=("Arial", 12))
+        unlocked_text.pack(pady=10)
 
         close_button = tk.Button(popup_window, text="Close", command=popup_window.destroy)
         close_button.pack(pady=10)
