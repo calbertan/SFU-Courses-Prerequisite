@@ -78,10 +78,8 @@ for _, row in df.iterrows():
 
 # Returns list of courses that are unlocked by the given course
 def get_unlocked_courses(course):
-    print(f"Checking unlocked courses for: {course}")
     if course in course_graph:
         unlocked = list(nx.descendants(course_graph, course))
-        print(f"Unlocked courses: {unlocked}")
         return unlocked # Returns all nodes reachable from course in course_graph 
     return []
 
