@@ -15,6 +15,6 @@ combined_df = pd.merge(
 # Count # of offerings
 combined_df['numberOfOfferings'] = combined_df['Offerings'].str.strip("[]").str.split(",").str.len()
 
-combined_df.to_csv('courses_data.csv', index=False)
+combined_df.to_csv('3_sfu_courses_dataset.csv', index=False)
 
 print(combined_df)

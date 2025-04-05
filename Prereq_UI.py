@@ -3,6 +3,8 @@ import tkinter as tk
 from tkinter import ttk
 import ctypes
 import networkx as nx
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 # Improve display quality on Windows
 try:
@@ -29,8 +31,13 @@ df.rename(columns={
     "numberOfOfferings": "Number of Offerings"
 }, inplace=True)
 
+def on_close():
+    print("Window closed")
+    root.quit()
+
 # Create the main window
 root = tk.Tk()
+root.protocol("WM_DELETE_WINDOW", on_close)
 root.title("SFU Courses Viewer")
 root.geometry("1920x1080")  # Set resolution to 1920x1080
 root.option_add('*Font', 'Arial 12')  # Set a better font
@@ -83,7 +90,38 @@ def get_unlocked_courses(course):
         return unlocked # Returns all nodes reachable from course in course_graph 
     return []
 
+# Function to visualize graph
+def visualize_graph(parent, subgraph, selected_course):
+    # Create a frame for the graph
+    graph_frame = tk.Frame(parent)
+    graph_frame.pack(fill="both", expand=True, pady=10)
 
+    # Create a matplotlib figure with a larger size for the graph content
+    fig, ax = plt.subplots(figsize=(25, 10))
+    pos = nx.spring_layout(subgraph, k=1.0, iterations=100)     
+    node_colors = [
+        "lightsteelblue" if node == selected_course else "lightgray"
+        for node in subgraph.nodes()
+    ]
+     
+    nx.draw_networkx_nodes(subgraph, pos, node_color=node_colors, node_size=1000, ax=ax)
+    nx.draw_networkx_labels(subgraph, pos, font_size=10, ax=ax)
+    nx.draw_networkx_edges( subgraph, pos, edge_color="black", arrows=True, alpha=0.4, ax=ax)
+
+    # Embed matplotlib figure
+    canvas = FigureCanvasTkAgg(fig, master=graph_frame)
+    canvas.draw()
+    canvas.get_tk_widget().config(width=600, height=300)
+    canvas.get_tk_widget().pack(fill="both", expand=True)
+
+    # Add navigation toolbar for panning
+    toolbar = NavigationToolbar2Tk(canvas, graph_frame)
+    toolbar.update()
+    toolbar.pack(side=tk.TOP, fill=tk.X)
+    canvas.mpl_connect("button_press_event", lambda event: canvas._tkcanvas.focus_set())
+    canvas.toolbar.pan() 
+
+    return graph_frame
 # ------------------------------- Tkinter UI -------------------------------
 
 def show_prerequisites(event):
@@ -103,7 +141,7 @@ def show_prerequisites(event):
         # Create a new popup window
         popup_window = tk.Toplevel(root)
         popup_window.title("Prerequisites Detail")
-        popup_window.geometry("600x300")  # Increased size
+        popup_window.geometry("600x800")  # Increased size
 
         label = tk.Label(popup_window, text="Prerequisites:", font=("Arial", 14, "bold"))
         label.pack(pady=10)
@@ -116,6 +154,21 @@ def show_prerequisites(event):
 
         unlocked_text = tk.Label(popup_window, text=unlocked_courses, wraplength=550, font=("Arial", 12))
         unlocked_text.pack(pady=10)
+        
+        # Visualizing graph
+        # Create a subgraph for the selected course and its descendants
+        subgraph_nodes = [selected_course] + unlocked_courses
+        subgraph = course_graph.subgraph(subgraph_nodes)
+        
+        # Check density
+        num_nodes = subgraph.number_of_nodes()
+
+        # graph is too dense to display
+        if num_nodes > 25:
+            unlocked_label = tk.Label(popup_window, text="Graph too dense, just take the class", font=("Arial", 14, "bold"))
+            unlocked_label.pack(pady=10)
+        else:
+            visualize_graph(popup_window, subgraph, selected_course)
 
         close_button = tk.Button(popup_window, text="Close", command=popup_window.destroy)
         close_button.pack(pady=10)
