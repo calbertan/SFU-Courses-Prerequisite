@@ -4,6 +4,7 @@ from tkinter import ttk
 import ctypes
 import networkx as nx
 import matplotlib.pyplot as plt
+import re
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 # Improve display quality on Windows
@@ -87,6 +88,7 @@ for _, row in df.iterrows():
 def get_unlocked_courses(course):
     if course in course_graph:
         unlocked = list(nx.descendants(course_graph, course))
+        unlocked = sorted(unlocked)
         return unlocked # Returns all nodes reachable from course in course_graph 
     return []
 
@@ -111,7 +113,7 @@ def visualize_graph(parent, subgraph, selected_course):
     # Embed matplotlib figure
     canvas = FigureCanvasTkAgg(fig, master=graph_frame)
     canvas.draw()
-    canvas.get_tk_widget().config(width=600, height=300)
+    canvas.get_tk_widget().config(width=1850, height=500)
     canvas.get_tk_widget().pack(fill="both", expand=True)
 
     # Add navigation toolbar for panning
@@ -122,64 +124,101 @@ def visualize_graph(parent, subgraph, selected_course):
     canvas.toolbar.pan() 
 
     return graph_frame
-# ------------------------------- Tkinter UI -------------------------------
 
-def show_prerequisites(event):
+# ------------------------------- Tkinter UI -------------------------------
+def show_prerequisites(event=None, course_name=None):
     global popup_window  
 
     # Close existing pop-up if it's open
     if popup_window is not None:
         popup_window.destroy()
+        popup_window = None
 
-    selected_item = tree.selection()
-    if selected_item:
-        actual_prerequisites = tree.item(selected_item, "tags")[0]  # Retrieve saved Prerequisites from tags
-        selected_course = tree.item(selected_item, "values")[0] + tree.item(selected_item, "values")[1] # Retrieve course number
-
-        unlocked_courses = get_unlocked_courses(selected_course)
-
-        # Create a new popup window
-        popup_window = tk.Toplevel(root)
-        popup_window.title("Prerequisites Detail")
-        popup_window.geometry("600x800")  # Increased size
-
-        label = tk.Label(popup_window, text="Prerequisites:", font=("Arial", 14, "bold"))
-        label.pack(pady=10)
-
-        prereq_text = tk.Label(popup_window, text=actual_prerequisites, wraplength=550, font=("Arial", 12))
-        prereq_text.pack(pady=10)
-
-        unlocked_label = tk.Label(popup_window, text="This course unlocks:", font=("Arial", 14, "bold"))
-        unlocked_label.pack(pady=10)
-
-        unlocked_text = tk.Label(popup_window, text=unlocked_courses, wraplength=550, font=("Arial", 12))
-        unlocked_text.pack(pady=10)
-        
-        # Visualizing graph
-        # Create a subgraph for the selected course and its descendants
-        subgraph_nodes = [selected_course] + unlocked_courses
-        subgraph = course_graph.subgraph(subgraph_nodes)
-        
-        # Check density
-        num_nodes = subgraph.number_of_nodes()
-
-        # graph is too dense to display
-        if num_nodes > 25:
-            unlocked_label = tk.Label(popup_window, text="Graph too dense, just take the class", font=("Arial", 14, "bold"))
-            unlocked_label.pack(pady=10)
+    if event is not None:
+        # Case when called from table double-click
+        selected_item = tree.selection()
+        if selected_item:
+            actual_prerequisites = tree.item(selected_item, "tags")[0]
+            selected_course = tree.item(selected_item, "values")[0] + tree.item(selected_item, "values")[1]
+    else:
+        # Case when called from unlocked course click
+        selected_course = course_name
+        # Use regex to split letters and numbers
+        import re
+        match = re.match(r"([A-Za-z]+)(\d+[A-Za-z]*)", selected_course)
+        if match:
+            dept = match.group(1)
+            num = match.group(2)
+            # Convert both to strings and strip whitespace for comparison
+            course_row = df[
+                (df['Department'] == dept) & 
+                (df['Course Number'].astype(str).str.strip() == num)
+            ]
+            actual_prerequisites = course_row.iloc[0]['Prerequisites'] if not course_row.empty else "N/A"
         else:
-            visualize_graph(popup_window, subgraph, selected_course)
+            actual_prerequisites = "N/A"
 
-        close_button = tk.Button(popup_window, text="Close", command=popup_window.destroy)
-        close_button.pack(pady=10)
+    unlocked_courses = get_unlocked_courses(selected_course)
 
-        # Ensure the pop-up is closed when destroyed
-        popup_window.protocol("WM_DELETE_WINDOW", lambda: set_popup_none())
+    # Create popup window
+    popup_window = tk.Toplevel(root)
+    popup_window.title(f"Prerequisites for {selected_course}")
+    popup_window.geometry("1920x1080")
 
-def set_popup_none():
-    """Resets the global pop-up variable when the window is closed."""
-    global popup_window
-    popup_window = None
+    # Prerequisites section
+    tk.Label(popup_window, text="Prerequisites:", font=("Arial", 14, "bold")).pack(pady=10)
+    tk.Label(popup_window, text=actual_prerequisites, wraplength=1900, font=("Arial", 12)).pack(pady=10)
+
+    # Unlocked courses section
+    tk.Label(popup_window, text="This course unlocks:", font=("Arial", 14, "bold")).pack(pady=10)
+    
+    # Create a frame for the clickable courses with wrapping
+    courses_frame = tk.Frame(popup_window)
+    courses_frame.pack(fill=tk.X, padx=20, pady=5)
+    
+    # Track current row and column for grid layout
+    current_row = 0
+    current_col = 0
+    max_cols = 30  # Number of courses and commas per row
+    
+    for i, course in enumerate(unlocked_courses):
+        # Create clickable label
+        btn = tk.Label(courses_frame, text=course, fg="blue", cursor="hand2", 
+                      font=("Arial", 1), padx=2)
+        btn.grid(row=current_row, column=current_col, sticky="w")
+        btn.bind("<Button-1>", lambda e, c=course: show_prerequisites(course_name=c))
+        
+        # Add hover effects
+        btn.bind("<Enter>", lambda e, b=btn: b.config(fg="darkblue", font=("Arial", 11, "underline")))
+        btn.bind("<Leave>", lambda e, b=btn: b.config(fg="blue", font=("Arial", 11)))
+        
+        current_col += 1
+        
+        # Add comma if not last in row
+        if i < len(unlocked_courses) - 1 and current_col < max_cols:
+            tk.Label(courses_frame, text=",", font=("Arial", 12)).grid(
+                row=current_row, column=current_col, sticky="w")
+            current_col += 1
+        
+        # Move to next row if needed
+        if current_col >= max_cols:
+            current_row += 1
+            current_col = 0
+    
+    # Visualizing graph
+    # Create a subgraph for the selected course and its descendants
+    subgraph_nodes = [selected_course] + unlocked_courses
+    subgraph = course_graph.subgraph(subgraph_nodes)
+    
+    # Check density
+    num_nodes = subgraph.number_of_nodes()
+
+    # graph is too dense to display
+    if num_nodes > 25:
+        unlocked_label = tk.Label(popup_window, text="Graph too dense, just take the class", font=("Arial", 14, "bold"))
+        unlocked_label.pack(pady=10)
+    else:
+        visualize_graph(popup_window, subgraph, selected_course)
 
 # Search bar
 search_var = tk.StringVar()
