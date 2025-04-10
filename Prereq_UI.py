@@ -94,6 +94,8 @@ def get_unlocked_courses(course):
 
 # Function to visualize graph
 def visualize_graph(parent, subgraph, selected_course):
+    global popup_window
+
     # Create a frame for the graph
     graph_frame = tk.Frame(parent)
     graph_frame.pack(fill="both", expand=True, pady=10)
@@ -108,7 +110,19 @@ def visualize_graph(parent, subgraph, selected_course):
      
     nx.draw_networkx_nodes(subgraph, pos, node_color=node_colors, node_size=1000, ax=ax)
     nx.draw_networkx_labels(subgraph, pos, font_size=10, ax=ax)
-    nx.draw_networkx_edges( subgraph, pos, edge_color="black", arrows=True, alpha=0.4, ax=ax)
+    nx.draw_networkx_edges(
+        subgraph,
+        pos,
+        edge_color="black",
+        arrowstyle='-|>',
+        arrowsize=10,
+        width=0.75,
+        ax=ax,
+        min_source_margin=15,
+        min_target_margin=15
+    )
+
+    ax.set_axis_off()
 
     # Embed matplotlib figure
     canvas = FigureCanvasTkAgg(fig, master=graph_frame)
@@ -123,6 +137,19 @@ def visualize_graph(parent, subgraph, selected_course):
     canvas.mpl_connect("button_press_event", lambda event: canvas._tkcanvas.focus_set())
     canvas.toolbar.pan() 
 
+    def on_node_click(event):
+        if event.inaxes:
+            click_x, click_y = event.xdata, event.ydata
+            for node, (x, y) in pos.items():
+                distance = ((x - click_x)**2 + (y - click_y)**2)**0.5
+                if distance < 0.1:  # Threshold
+                    # Close current popup and show new one
+                    if popup_window is not None:
+                        popup_window.destroy()
+                    show_prerequisites(course_name=node)
+                    break
+
+    canvas.mpl_connect("button_press_event", on_node_click)
     return graph_frame
 
 # ------------------------------- Tkinter UI -------------------------------
