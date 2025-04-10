@@ -4,8 +4,8 @@ from tkinter import ttk
 import ctypes
 import networkx as nx
 import matplotlib.pyplot as plt
-import re
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from Graph import custom_layout, visualize_graph
 
 # Improve display quality on Windows
 try:
@@ -63,8 +63,6 @@ def update_table():
 
 # ------------------------------- Graph work -------------------------------
 # Plan: courses = nodes, with directed edges = prerequisites
-
-
 # Build course graph
 course_graph = nx.DiGraph()
 
@@ -92,67 +90,6 @@ def get_unlocked_courses(course):
         return unlocked # Returns all nodes reachable from course in course_graph 
     return []
 
-# Function to visualize graph
-# Function to visualize graph
-def visualize_graph(parent, subgraph, selected_course):
-    global popup_window
-
-    # Create a frame for the graph
-    graph_frame = tk.Frame(parent)
-    graph_frame.pack(fill="both", expand=True, pady=10)
-    
-    # Check the number of direct neighbors for the selected course
-    direct_neighbors = list(subgraph.neighbors(selected_course))
-    if len(direct_neighbors) > 5:
-        nodes_to_keep = [selected_course] + direct_neighbors
-        filtered_subgraph = nx.DiGraph()
-        filtered_subgraph.add_nodes_from(nodes_to_keep)
-        
-        # Remove edges between neighbors (co-requisites ruin crowded graphs)
-        edges_to_keep = [(u, v) for u, v in subgraph.edges() if u == selected_course and v in direct_neighbors]
-        filtered_subgraph.add_edges_from(edges_to_keep)
-    else:
-        filtered_subgraph = subgraph
-
-    # Create a matplotlib figure with a larger size for the graph content
-    fig, ax = plt.subplots(figsize=(15, 10))
-    pos = nx.spring_layout(filtered_subgraph, k=2, iterations=100)     
-    node_colors = [
-        "lightsteelblue" if node == selected_course else "lightgray"
-        for node in filtered_subgraph.nodes()
-    ]
-     
-    nx.draw_networkx_nodes(filtered_subgraph, pos, node_color=node_colors, node_size=1000, ax=ax)
-    nx.draw_networkx_labels(filtered_subgraph, pos, font_size=10, ax=ax)
-    nx.draw_networkx_edges(filtered_subgraph, pos, edge_color="gray", arrows=True, arrowsize=20, min_target_margin=20, ax=ax)
-
-    # Embed matplotlib figure
-    canvas = FigureCanvasTkAgg(fig, master=graph_frame)
-    canvas.draw()
-    canvas.get_tk_widget().config(width=600, height=300)
-    canvas.get_tk_widget().pack(fill="both", expand=True)
-    
-    # Add navigation toolbar for panning
-    toolbar = NavigationToolbar2Tk(canvas, graph_frame)
-    toolbar.update()
-    toolbar.pack(side=tk.TOP, fill=tk.X)
-    canvas.mpl_connect("button_press_event", lambda event: canvas._tkcanvas.focus_set())
-    canvas.toolbar.pan() 
-
-    def on_node_click(event):
-        if event.inaxes:
-            click_x, click_y = event.xdata, event.ydata
-            for node, (x, y) in pos.items():
-                distance = ((x - click_x)**2 + (y - click_y)**2)**0.5
-                if distance < 0.1:  # Threshold
-                    # Close current popup and show new one
-                    if popup_window is not None:
-                        popup_window.destroy()
-                    show_prerequisites(course_name=node)
-                    break
-
-    canvas.mpl_connect("button_press_event", on_node_click)
-    return graph_frame
 # ------------------------------- Tkinter UI -------------------------------
 def link_unlocked_courses(popup_window, unlocked_courses):
     # Create a frame for the clickable courses with wrapping
@@ -253,9 +190,7 @@ def show_prerequisites(event=None, course_name=None):
     
     # Visualizing graph
     # Create a subgraph for the selected course and its descendants
-    subgraph_nodes = [selected_course] + unlocked_courses
-    subgraph = course_graph.subgraph(subgraph_nodes)
-    visualize_graph(popup_window, subgraph, selected_course)
+    visualize_graph(popup_window, course_graph, selected_course, show_prerequisites)
     
 
 # Search bar
@@ -264,6 +199,7 @@ search_entry = tk.Entry(root, textvariable=search_var, width=40)
 search_entry.pack(pady=10)
 search_button = tk.Button(root, text="Search", command=update_table)
 search_button.pack(pady=5)  # Added padding to move table down
+search_entry.bind('<Return>', lambda event: update_table())
 
 # Table with Scrollbar
 frame = tk.Frame(root)
