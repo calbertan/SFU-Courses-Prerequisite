@@ -225,7 +225,7 @@ def show_prerequisites(event=None, course_name=None):
     # Create popup window
     popup_window = tk.Toplevel(root)
     popup_window.title(f"Prerequisites for {selected_course}")
-    popup_window.geometry("1000x800")
+    popup_window.geometry("1920x1080")
 
     label = tk.Label(popup_window, text=selected_course, font=("Arial", 14, "bold"))
     label.pack(padx=5, pady=5, anchor="w")
