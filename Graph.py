@@ -93,6 +93,7 @@ def create_filtered_graph(course_graph, selected_course):
 def visualize_graph(parent, course_graph, selected_course, on_click):
     # Create a frame for the graph
     graph_frame = tk.Frame(parent)
+    graph_frame.pack_propagate(False)
     graph_frame.pack(fill="both", expand=True, padx=0, pady=0)
     
     # Create the filtered subgraph
@@ -107,7 +108,6 @@ def visualize_graph(parent, course_graph, selected_course, on_click):
         "lightsteelblue" if node == selected_course else "lightgray"
         for node in filtered_subgraph.nodes()
     ]
-
     # Draw the graph
     nx.draw_networkx_nodes(filtered_subgraph, pos, node_color=node_colors, node_size=1000, ax=ax)
     nx.draw_networkx_labels(filtered_subgraph, pos, font_size=10, ax=ax)
