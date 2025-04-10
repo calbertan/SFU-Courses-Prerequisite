@@ -184,7 +184,7 @@ def show_prerequisites(event=None, course_name=None):
     for i, course in enumerate(unlocked_courses):
         # Create clickable label
         btn = tk.Label(courses_frame, text=course, fg="blue", cursor="hand2", 
-                      font=("Arial", 1), padx=2)
+                      font=("Arial", 11), padx=2)
         btn.grid(row=current_row, column=current_col, sticky="w")
         btn.bind("<Button-1>", lambda e, c=course: show_prerequisites(course_name=c))
         
