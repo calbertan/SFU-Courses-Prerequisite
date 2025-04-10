@@ -14,23 +14,15 @@ except:
     pass
 
 # Load dataset
-file_path = "3_sfu_courses_dataset.csv"
+file_path = "sfu_courses_dataset.csv"
 df = pd.read_csv(file_path)
 
-# Replace NaN values in Prerequisites and ParsedPrerequisites with 'N/A'
-df['Prerequisites'] = df['Prerequisites'].fillna('N/A')
-df['ParsedPrerequisites'] = df['ParsedPrerequisites'].fillna('N/A')
-
-# Format Offerings and Parsed Prerequisites to remove brackets and quotes
-df['Offerings'] = df['Offerings'].apply(lambda x: ', '.join(eval(x)) if isinstance(x, str) and x.startswith('[') else 'N/A')
-df['ParsedPrerequisites'] = df['ParsedPrerequisites'].apply(lambda x: ', '.join(sorted(set(x.replace('(', '').replace(')', '').split(',')))) if isinstance(x, str) else 'N/A')
-
-# Rename columns
-df.rename(columns={
-    "CourseNumber": "Course Number",
-    "ParsedPrerequisites": "Parsed Prerequisites",
-    "numberOfOfferings": "Number of Offerings"
-}, inplace=True)
+completed_courses = pd.read_csv("completed_courses.csv")
+completed_set = set(zip(completed_courses['Department'], completed_courses['Course Number']))
+df['has_completed'] = df.apply(
+    lambda row: (row['Department'], row['Course Number']) in completed_set,
+    axis=1
+)
 
 def on_close():
     print("Window closed")
@@ -73,9 +65,9 @@ for _, row in df.iterrows():
 
 # Add edges
 for _, row in df.iterrows():
-    if row["Parsed Prerequisites"] != "N/A":
+    if (pd.notna(row["Simple Prerequisites"])):
         course_name = f"{row['Department']}{row['Course Number']}"
-        prerequisites = row["Parsed Prerequisites"].split(", ")
+        prerequisites = row["Simple Prerequisites"].split(", ")
         for prereq in prerequisites:
             prereq = prereq.strip()
             if prereq:
@@ -94,12 +86,12 @@ def get_unlocked_courses(course):
 def link_unlocked_courses(popup_window, unlocked_courses):
     # Create a frame for the clickable courses with wrapping
     courses_frame = tk.Frame(popup_window)
-    courses_frame.pack(fill=tk.X, padx=20, pady=5)
+    courses_frame.pack(fill="x", pady=5)
     
     # Track current row and column for grid layout
     current_row = 0
     current_col = 0
-    max_cols = 30  # Number of courses and commas per row
+    max_cols = 20
     
     for i, course in enumerate(unlocked_courses):
         # Create clickable label
