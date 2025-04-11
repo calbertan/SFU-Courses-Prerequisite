@@ -1,10 +1,10 @@
 import re
 import pandas as pd
-import ollama
-from io import StringIO
+# import ollama
+# from io import StringIO
 
-client = ollama.Client()
-model = "llama3.2"
+# client = ollama.Client()
+# model = "llama3.2"
 
 # Check if the prerequisites string contains a 3-digit number
 def contains_course(prerequisites):
@@ -16,6 +16,7 @@ df = pd.read_csv("sfu_courses.csv")
 df = df[df["Prerequisites"].map(contains_course)]
 df.to_csv("2_sfu_courses_filtered.csv", index=False)
 
+## Running local llm to parse data
 # for dept, group in df.groupby('Department'):
 #   # Convert the group to a CSV string
 #   buffer = StringIO()
@@ -38,7 +39,3 @@ df.to_csv("2_sfu_courses_filtered.csv", index=False)
 #     print(response.response)
     # print(prompt)
 
-  
-  
-
-# Get sfu_prereq.csv, probably with LLMs

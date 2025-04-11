@@ -29,12 +29,12 @@ def get_graph(df):
 # Custom layout tailored to your filtering
 def custom_layout(graph, selected_course, prerequisites):
     pos = {}
-    # Place selected_course at x=0
     pos[selected_course] = (0, 0)
     
-    # Place prerequisites on the left (x < 0)
+    # Place prerequisites on the left (x < 0), centered around 0
     for i, prereq in enumerate(prerequisites):
-        pos[prereq] = (-1, (len(prerequisites) - 1) / 2 - i)  # Spread vertically
+        y_offset = (i - (len(prerequisites) - 1)/2)
+        pos[prereq] = (-1, y_offset)
     
     # Calculate node depths (BFS)
     depths = {selected_course: 0}
@@ -46,13 +46,15 @@ def custom_layout(graph, selected_course, prerequisites):
                 depths[neighbor] = depths[current] + 1
                 queue.append(neighbor)
     
-    # Position nodes by depth (x = depth)
+    # Place nodes by depth, alternating above/below the center
     for node, depth in depths.items():
         if node != selected_course and node not in prerequisites:
             # Find all nodes at this depth for y-positioning
             same_depth_nodes = [n for n,d in depths.items() 
                               if d == depth and n != selected_course and n not in prerequisites]
-            y_pos = -same_depth_nodes.index(node)  # Simple vertical stacking
+            idx = same_depth_nodes.index(node)
+            
+            y_pos = (idx + 1) // 2 * (1 if idx % 2 == 0 else -1)
             pos[node] = (depth, y_pos)
     
     return pos
@@ -75,7 +77,7 @@ def create_filtered_graph(course_graph, selected_course):
         )
         filtered_subgraph.add_edges_from(edges_to_keep)
     else:
-        # Case 2: 5 or more direct neighbors, show prerequisites + neighbors
+        # Case 2: 8 or more direct neighbors, show prerequisites + neighbors
         nodes_to_keep = [selected_course] + prerequisites + direct_neighbors
         filtered_subgraph.add_nodes_from(nodes_to_keep)
         edges_to_keep = (
@@ -85,6 +87,27 @@ def create_filtered_graph(course_graph, selected_course):
         filtered_subgraph.add_edges_from(edges_to_keep)
 
     return filtered_subgraph, prerequisites
+
+def draw_edges(graph, pos, ax):
+    for (u, v) in graph.edges():
+        # Curve if same x but different y
+        if pos[u][0] == pos[v][0] and pos[u][1] != pos[v][1]:
+            rad = 0.3 if pos[u][1] < pos[v][1] else 0.3
+            style = f"arc3,rad={rad}"
+        else:
+            style = "arc3,rad=0"
+            
+        nx.draw_networkx_edges(
+            graph,
+            pos,
+            edgelist=[(u, v)],
+            edge_color="gray",
+            arrows=True,
+            arrowsize=20,
+            min_target_margin=20,
+            connectionstyle=style,
+            ax=ax
+        )
 
 # Function to visualize graph
 # parent: where the graph is going to be displayed 
@@ -124,17 +147,17 @@ def visualize_graph(parent, course_graph, selected_course, on_click):
     node_size = max(400, 1500 - (num_nodes * 30))
 
     # Draw the graph
-    nx.draw_networkx_nodes(filtered_subgraph, pos, node_color=node_colors, node_size=node_size, edgecolors='black', ax=ax)
+    nx.draw_networkx_nodes(filtered_subgraph, pos, alpha=0.8, node_color=node_colors, node_size=node_size, edgecolors='black', ax=ax)
     nx.draw_networkx_labels(filtered_subgraph, pos, font_size=10, ax=ax)
-    nx.draw_networkx_edges(filtered_subgraph, pos, edge_color="gray", arrows=True, arrowsize=20, 
-                        min_target_margin=20, ax=ax)
+    draw_edges(filtered_subgraph, pos, ax)
     
     # Legend
     legend_elements = [
-    mpatches.Patch(color="salmon", label="Prerequisite"),
-    mpatches.Patch(color="lightsteelblue", label="Selected Course"),
-    mpatches.Patch(color="lightgreen", label="Unlocked Course"),
-    mpatches.Patch(color="lightgray", label="Other"),]
+        mpatches.Patch(color="salmon", label="Prerequisite"),
+        mpatches.Patch(color="lightsteelblue", label="Selected Course"),
+        mpatches.Patch(color="lightgreen", label="Unlocked Course"),
+        mpatches.Patch(color="lightgray", label="Other")
+    ]
 
     ax.legend(handles=legend_elements, loc="upper right")
 
@@ -148,6 +171,7 @@ def visualize_graph(parent, course_graph, selected_course, on_click):
     toolbar = NavigationToolbar2Tk(canvas, graph_frame)
     toolbar.update()
     toolbar.pack(side=tk.TOP, fill=tk.X)
+    
     canvas.mpl_connect("button_press_event", lambda event: canvas._tkcanvas.focus_set())
     canvas.toolbar.pan() 
 
