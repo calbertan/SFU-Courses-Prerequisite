@@ -21,6 +21,7 @@ df = pd.read_csv(file_path)
 
 completed_courses = pd.read_csv("completed_courses.csv")
 completed_set = set(zip(completed_courses['Department'], completed_courses['Course Number']))
+completed_courses_list = [f"{dept}{code}" for dept, code in completed_set]
 df['has_completed'] = df.apply(
     lambda row: (row['Department'], row['Course Number']) in completed_set,
     axis=1
@@ -132,7 +133,7 @@ def update_table():
         if search_term in str(row['Department']).lower() or \
            search_term in str(row['Course Number']).lower() or \
            search_term in str(row['Prerequisites']).lower():
-            tree.insert("", "end", values=display_values, tags=(row["Prerequisites"],))  # Store actual Prerequisites in tag
+            tree.insert("", "end", values=display_values, tags=(row["Prerequisites"],row["Parsed Prerequisites"]))  # Store actual Prerequisites in tag
 
 def set_filter(filter_type):
     # Sets the current filter and updates the table
@@ -262,6 +263,42 @@ def link_unlocked_courses(popup_window, unlocked_courses):
         if current_col >= max_cols:
             current_row += 1
             current_col = 0
+            
+def show_highlighted_prerequisites(parent, prerequisites_text):
+    # Convert course tuples to codes (e.g., "CMPT201")
+    text_widget = tk.Text(
+        parent,
+        wrap=tk.WORD,
+        width=60,
+        height=1,
+        font=("Arial", 12),
+        padx=5,
+        pady=5,
+        relief=tk.FLAT,          # No border (like Label)
+        bg=parent.cget('bg'),    # Match parent background
+    )
+    text_widget.pack(anchor="w", fill="x")
+    
+    # Insert the raw text
+    text_widget.insert(tk.END, prerequisites_text)
+    
+    # Configure highlighting
+    text_widget.tag_configure("highlight", foreground="blue")
+    
+    for course in completed_courses_list:
+        start_idx = "1.0"
+        while True:
+            start_idx = text_widget.search(course, start_idx, stopindex=tk.END)
+            if not start_idx:
+                break
+            end_idx = f"{start_idx}+{len(course)}c"
+            text_widget.tag_add("highlight", start_idx, end_idx)
+            start_idx = end_idx
+    
+    # Make read-only
+    text_widget.config(state=tk.DISABLED)
+    
+    return text_widget
 
 def show_prerequisites(event=None, course_name=None):
     global popup_window  
@@ -276,6 +313,7 @@ def show_prerequisites(event=None, course_name=None):
         selected_item = tree.selection()
         if selected_item:
             actual_prerequisites = tree.item(selected_item, "tags")[0]
+            parsed_prerequisites = tree.item(selected_item, "tags")[1]
             selected_course = tree.item(selected_item, "values")[0] + tree.item(selected_item, "values")[1]
     else:
         # Case when called from unlocked course click
@@ -291,7 +329,9 @@ def show_prerequisites(event=None, course_name=None):
                 (df['Course Number'].astype(str).str.strip() == num)
             ]
             actual_prerequisites = course_row.iloc[0]['Prerequisites'] if not course_row.empty else "N/A"
+            parsed_prerequisites = course_row.iloc[0]['Parsed Prerequisites'] if not course_row.empty else "N/A"
         else:
+            parsed_prerequisites = "N/A"
             actual_prerequisites = "N/A"
 
     unlocked_courses = get_unlocked_courses(selected_course)
@@ -311,9 +351,13 @@ def show_prerequisites(event=None, course_name=None):
     if(actual_prerequisites == "N/A"):
         actual_prerequisites = "This course does not have prerequisites"
     
-    prereq_text = tk.Label(popup_window, text=actual_prerequisites, wraplength=550, font=("Arial", 12), justify="left")
+    prereq_text = tk.Label(popup_window, text=actual_prerequisites, wraplength=720, font=("Arial", 12), justify="left")
     prereq_text.pack(padx=5, pady=5, anchor="w")
 
+    if(parsed_prerequisites != "N/A"):
+        label = tk.Label(popup_window, text="Possible combinations (Highlighted means you have completed the course)", font=("Arial", 12, "bold"))
+        label.pack(padx=5, anchor="w")
+        show_highlighted_prerequisites(popup_window, parsed_prerequisites)
     
     # Visualizing graph
     # Create a subgraph for the selected course and its descendants
