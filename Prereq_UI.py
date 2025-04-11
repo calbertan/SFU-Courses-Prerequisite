@@ -48,13 +48,27 @@ root.option_add('*Font', 'Arial 12')  # Set a better font
 # Global variable to track the pop-up window
 popup_window = None
 
+# Track current filter state
+current_filter = "all"  # can be "all", "completed", or "not_completed"
+
 def update_table():
-    """Updates the table based on search input."""
+    # Updates the table based on search input and current filter state
+    global current_filter
+    
     search_term = search_var.get().lower()
     for row in tree.get_children():
         tree.delete(row)
 
-    for _, row in df.iterrows():
+    # Apply filter first
+    if current_filter == "completed":
+        filtered_df = df[df['has_completed'] == True]
+    elif current_filter == "not_completed":
+        filtered_df = df[df['has_completed'] == False]
+    else:
+        filtered_df = df
+
+    # Then apply search within filtered results
+    for _, row in filtered_df.iterrows():
         # Create display values for only the columns we want to show
         display_values = [
             row['Department'],
@@ -70,6 +84,22 @@ def update_table():
            search_term in str(row['Prerequisites']).lower():
             tree.insert("", "end", values=display_values, tags=(row["Prerequisites"],))  # Store actual Prerequisites in tag
 
+def set_filter(filter_type):
+    # Sets the current filter and updates the table
+    global current_filter
+    current_filter = filter_type
+    update_table()
+    
+    # Update button states to show which is active
+    for btn in [all_button, completed_button, not_completed_button]:
+        btn.config(relief=tk.RAISED)
+    
+    if filter_type == "all":
+        all_button.config(relief=tk.SUNKEN)
+    elif filter_type == "completed":
+        completed_button.config(relief=tk.SUNKEN)
+    elif filter_type == "not_completed":
+        not_completed_button.config(relief=tk.SUNKEN)
 
 # ------------------------------- Graph work -------------------------------
 # Plan: courses = nodes, with directed edges = prerequisites
@@ -201,14 +231,27 @@ def show_prerequisites(event=None, course_name=None):
     # Visualizing graph
     # Create a subgraph for the selected course and its descendants
     visualize_graph(popup_window, course_graph, selected_course, show_prerequisites)
-    
+
+# Create a frame for the filter buttons
+filter_frame = tk.Frame(root)
+filter_frame.pack(pady=10, anchor="w")
+
+# Create filter buttons with toggle appearance
+all_button = tk.Button(filter_frame, text="Show All", command=lambda: set_filter("all"), relief=tk.SUNKEN)
+all_button.pack(side="left", padx=5)
+
+completed_button = tk.Button(filter_frame, text="Show Completed", command=lambda: set_filter("completed"), relief=tk.RAISED)
+completed_button.pack(side="left", padx=5)
+
+not_completed_button = tk.Button(filter_frame, text="Show Not Completed", command=lambda: set_filter("not_completed"), relief=tk.RAISED)
+not_completed_button.pack(side="left", padx=5)
 
 # Search bar
 search_var = tk.StringVar()
 search_entry = tk.Entry(root, textvariable=search_var, width=40)
 search_entry.pack(pady=10)
 search_button = tk.Button(root, text="Search", command=update_table)
-search_button.pack(pady=5)  # Added padding to move table down
+search_button.pack(pady=5)
 search_entry.bind('<Return>', lambda event: update_table())
 
 # Table with Scrollbar
