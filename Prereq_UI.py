@@ -1,11 +1,13 @@
 import pandas as pd
+import numpy as np
 import tkinter as tk
 from tkinter import ttk
 import ctypes
 import networkx as nx
 import matplotlib.pyplot as plt
+import re
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-from Graph import custom_layout, visualize_graph
+from Graph import custom_layout, get_graph, visualize_graph
 
 # Improve display quality on Windows
 try:
@@ -51,6 +53,48 @@ popup_window = None
 # Track current filter state
 current_filter = "all"  # can be "all", "completed", or "not_completed"
 
+def get_course_level(course_code):
+    # Extract the first 3+ digits from the course code (e.g., "340" from "ACMA340")
+    match = re.search(r'\d+', course_code)
+    return int(match.group()) if match else 0  # Default to 0 if no number found
+
+def can_take_course(prereq_str, completed_set):
+    # Check if a course can be taken based on its parsed prerequisites and completed courses
+    if prereq_str in ["No Prerequisites", "N/A"]:
+        return True
+
+    # Remove all whitespace and split into individual groups
+    prereq_str = prereq_str.replace(" ", "")
+    groups = prereq_str.split('),(')
+
+    # Clean up parentheses
+    groups = [group.strip('()') for group in groups if group.strip('()')]
+
+    for group in groups:
+        if not group:
+            continue
+
+        courses_in_group = group.split(',')
+        all_completed = True
+
+        for course in courses_in_group:
+            match = re.match(r'([A-Za-z]+)(\d+[A-Za-z]*)', course)
+            if match:
+                dept, num = match.groups()
+                try:
+                    if (dept, int(num)) not in completed_set:
+                        all_completed = False
+                        break
+                except ValueError:
+                    all_completed = False
+                    break
+            else:
+                all_completed = False
+                break
+        if all_completed:
+            return True
+    return False
+
 def update_table():
     # Updates the table based on search input and current filter state
     global current_filter
@@ -64,6 +108,11 @@ def update_table():
         filtered_df = df[df['has_completed'] == True]
     elif current_filter == "not_completed":
         filtered_df = df[df['has_completed'] == False]
+    elif current_filter == "can_take":
+        # Filter for courses that can be taken based on prerequisites
+        filtered_df = df[df['Parsed Prerequisites'].apply(
+            lambda x: can_take_course(str(x), completed_set)
+        )]
     else:
         filtered_df = df
 
@@ -77,7 +126,8 @@ def update_table():
             row['Offerings'],
             row['Parsed Prerequisites'],
             row['Number of Offerings'],
-            "Yes" if row['has_completed'] else "No"  # Format completed status
+            "Yes" if row['has_completed'] else "No",  # Format completed status
+            f"{row['Priority Score']:.1f}"
         ]
         if search_term in str(row['Department']).lower() or \
            search_term in str(row['Course Number']).lower() or \
@@ -91,7 +141,7 @@ def set_filter(filter_type):
     update_table()
     
     # Update button states to show which is active
-    for btn in [all_button, completed_button, not_completed_button]:
+    for btn in [all_button, completed_button, not_completed_button, can_take_button]:
         btn.config(relief=tk.RAISED)
     
     if filter_type == "all":
@@ -100,6 +150,8 @@ def set_filter(filter_type):
         completed_button.config(relief=tk.SUNKEN)
     elif filter_type == "not_completed":
         not_completed_button.config(relief=tk.SUNKEN)
+    elif filter_type == "can_take":
+        can_take_button.config(relief=tk.SUNKEN)
 
 # ------------------------------- Graph work -------------------------------
 # Plan: courses = nodes, with directed edges = prerequisites
@@ -129,6 +181,52 @@ def get_unlocked_courses(course):
         unlocked = sorted(unlocked)
         return unlocked # Returns all nodes reachable from course in course_graph 
     return []
+
+def count_downward_prerequisites(course_graph, course_name):
+    # Counts prerequisites recursively, only downward in course levels
+    current_level = get_course_level(course_name)
+    total_prereqs = 0
+    visited = set()  # Avoid double-counting
+    
+    def _recursive_count(course):
+        nonlocal total_prereqs
+        for prereq in course_graph.predecessors(course):
+            prereq_level = get_course_level(prereq)
+            if prereq_level <= current_level and prereq not in visited:
+                visited.add(prereq)
+                total_prereqs += 1
+                _recursive_count(prereq)  # Recurse downward
+    
+    _recursive_count(course_name)
+    return total_prereqs
+
+def calculate_priority_scores(df, course_graph):
+    priority_scores = []
+    for _, row in df.iterrows():
+        course_name = f"{row['Department']}{row['Course Number']}"
+        
+        # Recursive downward prerequisites
+        num_prereqs = count_downward_prerequisites(course_graph, course_name)
+        
+        # Number of unlocked courses
+        num_unlocks = len(list(nx.descendants(course_graph, course_name)))
+        
+        # Offerings penalty
+        try:
+            offerings = max(float(row['Number of Offerings']), 1)
+            inverse_offerings = 1 / offerings
+        except:
+            inverse_offerings = 0
+        
+        # Weighted score
+        score = (0.35 * num_prereqs) + (0.5 * num_unlocks) + (0.15 * inverse_offerings)
+        priority_scores.append(score)
+    
+    return priority_scores
+
+# Add Priority Score column to DataFrame
+df['Priority Score'] = calculate_priority_scores(df, course_graph)
+df['Priority Score'] = df['Priority Score'].rank(pct=True) * 100
 
 # ------------------------------- Tkinter UI -------------------------------
 def link_unlocked_courses(popup_window, unlocked_courses):
@@ -183,7 +281,6 @@ def show_prerequisites(event=None, course_name=None):
         # Case when called from unlocked course click
         selected_course = course_name
         # Use regex to split letters and numbers
-        import re
         match = re.match(r"([A-Za-z]+)(\d+[A-Za-z]*)", selected_course)
         if match:
             dept = match.group(1)
@@ -246,6 +343,9 @@ completed_button.pack(side="left", padx=5)
 not_completed_button = tk.Button(filter_frame, text="Show Not Completed", command=lambda: set_filter("not_completed"), relief=tk.RAISED)
 not_completed_button.pack(side="left", padx=5)
 
+can_take_button = tk.Button(filter_frame, text="Show Courses That Can Be Taken", command=lambda: set_filter("can_take"), relief=tk.RAISED)
+can_take_button.pack(side="left", padx=5)
+
 # Search bar
 search_var = tk.StringVar()
 search_entry = tk.Entry(root, textvariable=search_var, width=40)
@@ -267,25 +367,28 @@ tree.pack(expand=True, fill='both')
 
 # Adjust column widths
 tree.heading("Department", text="Department")
-tree.column("Department", width=25)
+tree.column("Department", width=30)
 
 tree.heading("Course Number", text="Course Number")
-tree.column("Course Number", width=50)
+tree.column("Course Number", width=65)
 
 tree.heading("Prerequisites", text="Prerequisites")
-tree.column("Prerequisites", width=150)
+tree.column("Prerequisites", width=155)
 
 tree.heading("Offerings", text="Offerings")
 tree.column("Offerings", width=460)
 
 tree.heading("Parsed Prerequisites", text="Parsed Prerequisites")
-tree.column("Parsed Prerequisites", width=500)
+tree.column("Parsed Prerequisites", width=400)
 
 tree.heading("Number of Offerings", text="Number of Offerings")
-tree.column("Number of Offerings", width=90)
+tree.column("Number of Offerings", width=110)
 
 tree.heading("has_completed", text="Completed")
-tree.column("has_completed", width=20)
+tree.column("has_completed", width=25)
+
+tree.heading("Priority Score", text="Priority Score")
+tree.column("Priority Score", width=50)
 
 style = ttk.Style()
 style.configure("Treeview", rowheight=30)
