@@ -24,6 +24,16 @@ df['has_completed'] = df.apply(
     axis=1
 )
 
+df['Parsed Prerequisites'] = df['Parsed Prerequisites'].fillna('No Prerequisites')  # Replace NaN
+df['Parsed Prerequisites'] = df['Parsed Prerequisites'].apply(
+    lambda x: 'N/A' if str(x).strip() == '' else x
+)
+
+df['Prerequisites'] = df['Prerequisites'].fillna('No Prerequisites')  # Replace NaN
+df['Prerequisites'] = df['Prerequisites'].apply(
+    lambda x: 'N/A' if str(x).strip() == '' else x
+)
+
 def on_close():
     print("Window closed")
     root.quit()
@@ -45,12 +55,20 @@ def update_table():
         tree.delete(row)
 
     for _, row in df.iterrows():
-        values = list(row)
-        values[df.columns.get_loc("Prerequisites")] = "Double-click for more detail"  # Override Prerequisites display
+        # Create display values for only the columns we want to show
+        display_values = [
+            row['Department'],
+            row['Course Number'],
+            "Double-click for more detail",  # Prerequisites placeholder
+            row['Offerings'],
+            row['Parsed Prerequisites'],
+            row['Number of Offerings'],
+            "Yes" if row['has_completed'] else "No"  # Format completed status
+        ]
         if search_term in str(row['Department']).lower() or \
            search_term in str(row['Course Number']).lower() or \
            search_term in str(row['Prerequisites']).lower():
-            tree.insert("", "end", values=values, tags=(row["Prerequisites"],))  # Store actual Prerequisites in tag
+            tree.insert("", "end", values=display_values, tags=(row["Prerequisites"],))  # Store actual Prerequisites in tag
 
 
 # ------------------------------- Graph work -------------------------------
@@ -198,7 +216,8 @@ frame = tk.Frame(root)
 frame.pack(expand=True, fill='both', pady=10)
 
 scrollbar = ttk.Scrollbar(frame, orient="vertical")
-tree = ttk.Treeview(frame, columns=list(df.columns), show='headings', yscrollcommand=scrollbar.set)
+columns_to_display = [col for col in df.columns if col != "Simple Prerequisites"]
+tree = ttk.Treeview(frame, columns=columns_to_display, show='headings', yscrollcommand=scrollbar.set)
 scrollbar.config(command=tree.yview)
 scrollbar.pack(side="right", fill="y")
 tree.pack(expand=True, fill='both')
@@ -208,19 +227,22 @@ tree.heading("Department", text="Department")
 tree.column("Department", width=25)
 
 tree.heading("Course Number", text="Course Number")
-tree.column("Course Number", width=45)
+tree.column("Course Number", width=50)
 
 tree.heading("Prerequisites", text="Prerequisites")
 tree.column("Prerequisites", width=150)
 
 tree.heading("Offerings", text="Offerings")
-tree.column("Offerings", width=500)
+tree.column("Offerings", width=460)
 
 tree.heading("Parsed Prerequisites", text="Parsed Prerequisites")
 tree.column("Parsed Prerequisites", width=500)
 
 tree.heading("Number of Offerings", text="Number of Offerings")
-tree.column("Number of Offerings", width=80)
+tree.column("Number of Offerings", width=90)
+
+tree.heading("has_completed", text="Completed")
+tree.column("has_completed", width=20)
 
 style = ttk.Style()
 style.configure("Treeview", rowheight=30)
