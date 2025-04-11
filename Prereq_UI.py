@@ -109,7 +109,7 @@ def link_unlocked_courses(popup_window, unlocked_courses):
     # Track current row and column for grid layout
     current_row = 0
     current_col = 0
-    max_cols = 20
+    max_cols = 30
     
     for i, course in enumerate(unlocked_courses):
         # Create clickable label
