@@ -265,7 +265,6 @@ def link_unlocked_courses(popup_window, unlocked_courses):
             current_col = 0
             
 def show_highlighted_prerequisites(parent, prerequisites_text):
-    # Convert course tuples to codes (e.g., "CMPT201")
     text_widget = tk.Text(
         parent,
         wrap=tk.WORD,
@@ -282,8 +281,7 @@ def show_highlighted_prerequisites(parent, prerequisites_text):
     # Insert the raw text
     text_widget.insert(tk.END, prerequisites_text)
     
-    # Configure highlighting
-    text_widget.tag_configure("highlight", foreground="blue")
+    text_widget.tag_configure("bold", font=("Arial", 12, "bold"))
     
     for course in completed_courses_list:
         start_idx = "1.0"
@@ -292,7 +290,7 @@ def show_highlighted_prerequisites(parent, prerequisites_text):
             if not start_idx:
                 break
             end_idx = f"{start_idx}+{len(course)}c"
-            text_widget.tag_add("highlight", start_idx, end_idx)
+            text_widget.tag_add("bold", start_idx, end_idx)
             start_idx = end_idx
     
     # Make read-only
@@ -355,7 +353,7 @@ def show_prerequisites(event=None, course_name=None):
     prereq_text.pack(padx=5, pady=5, anchor="w")
 
     if(parsed_prerequisites != "N/A"):
-        label = tk.Label(popup_window, text="Possible combinations (Highlighted means you have completed the course)", font=("Arial", 12, "bold"))
+        label = tk.Label(popup_window, text="Possible combinations (Bolded courses means you have completed them)", font=("Arial", 12, "bold"))
         label.pack(padx=5, anchor="w")
         show_highlighted_prerequisites(popup_window, parsed_prerequisites)
     
