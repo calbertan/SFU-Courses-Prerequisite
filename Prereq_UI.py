@@ -314,16 +314,6 @@ def show_prerequisites(event=None, course_name=None):
     prereq_text = tk.Label(popup_window, text=actual_prerequisites, wraplength=550, font=("Arial", 12), justify="left")
     prereq_text.pack(padx=5, pady=5, anchor="w")
 
-    # Unlocked courses section
-    unlocked_label = tk.Label(popup_window, text="This course unlocks:", font=("Arial", 12, "bold"))
-    unlocked_label.pack(padx=5, anchor="w")
-    
-    if unlocked_courses:
-       link_unlocked_courses(popup_window, unlocked_courses)
-    else:
-        unlocked_courses_text = "This course does not lock a higher level course"
-        unlocked_text = tk.Label(popup_window, text=unlocked_courses_text, wraplength=550, font=("Arial", 12), justify="left")
-        unlocked_text.pack(padx=5, anchor="w")
     
     # Visualizing graph
     # Create a subgraph for the selected course and its descendants
