@@ -26,7 +26,8 @@ def get_graph(df):
      
 	return course_graph
 
-# Custom layout tailored to your filtering
+# Custom graph layout based on depth
+# graph:
 def custom_layout(graph, selected_course, prerequisites):
     pos = {}
     pos[selected_course] = (0, 0)
@@ -46,16 +47,26 @@ def custom_layout(graph, selected_course, prerequisites):
                 depths[neighbor] = depths[current] + 1
                 queue.append(neighbor)
     
+    depth_counters = {}
+    global_x_offset = 0
+    
     # Place nodes by depth, alternating above/below the center
     for node, depth in depths.items():
         if node != selected_course and node not in prerequisites:
-            # Find all nodes at this depth for y-positioning
-            same_depth_nodes = [n for n,d in depths.items() 
-                              if d == depth and n != selected_course and n not in prerequisites]
-            idx = same_depth_nodes.index(node)
+            if depth not in depth_counters:
+                depth_counters[depth] = 0
             
-            y_pos = (idx + 1) // 2 * (1 if idx % 2 == 0 else -1)
-            pos[node] = (depth, y_pos)
+            if depth_counters[depth] > 0 and depth_counters[depth] % 7 == 0:
+                global_x_offset += 1
+            
+            # Calculate adjusted x position (increment if >7 nodes at this depth to make it more)
+            x_pos = depth + global_x_offset
+            # Calculate y, alternate above and below the center
+            y_pos = (depth_counters[depth] % 7 + 1) // 2 * (1 if (depth_counters[depth] % 7) % 2 == 0 else -1)
+            
+            pos[node] = (x_pos, y_pos)
+            
+            depth_counters[depth] += 1
     
     return pos
 

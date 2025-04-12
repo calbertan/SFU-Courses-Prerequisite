@@ -18,21 +18,16 @@ CMPT,310,"CMPT 225 and (MACM 101 or (ENSC 251 and ENSC 252)), all with a minimum
 CMPT,318,CMPT 225 with a minimum grade of C-. Additional prerequisites to be determined by the instructor subject to approval by the undergraduate program chair.
 CMPT,340,"Completion of 60 units including one of CMPT 125, 126, 128, 135, with a minimum grade of C- or CMPT 102 with a grade of B or higher."
 CMPT,353,"CMPT 225 and (BUS 232, STAT 201, STAT 203, STAT 205, STAT 270, STAT 271, ENSC 280, MSE 210, or SEE 241), with a minimum grade of C-."
-CMPT,354,"CMPT 225 and (MACM 101 or (ENSC 251 and ENSC 252)), all with a minimum grade of C-."
-CMPT,361,"CMPT 225 and MATH 232 or 240, all with a minimum grade of C-."
-CMPT,362,CMPT 225 with a minimum grade of C-.
-CMPT,363,"CMPT 225 and CMPT 263, both with a minimum grade of C-."
-CMPT,365,CMPT 225 with a minimum grade of C-.
-CMPT,371,"CMPT 225 and (MATH 151 or MATH 150), with a minimum grade of C-. MATH 154 or MATH 157 with a grade of at least B+ may be substituted for MATH 151 (MATH 150)."
-CMPT,372,"CMPT 272 and CMPT 225, both with a minimum grade of C-."
-CMPT,373,"CMPT 276 or 275, with a minimum grade of C-."
 CMPT,379,"(MACM 201 or CMPT 210), (CMPT 295 or ENSC 215) and CMPT 225, all with a minimum grade of C-."
 CMPT,383,"CMPT 225 and (MACM 101 or (ENSC 251 and ENSC 252)), all with a minimum grade of C-."
 CMPT,384,"CMPT 225 and (MACM 101 or (ENSC 251 and ENSC 252)), all with a minimum grade of C-."
+MATH,260,"MATH 152 with a minimum grade of C-; or MATH 155 or 158, with a grade of at least B; MATH 232 or 240, with a minimum grade of C-."
+MATH,292,Prerequisites will be specified according to the particular topic or topics offered.,"['Fall 2024', 'Spring 2024']",,2
 
 I need you to update the prequisite column to groups the prerequisites properly based on the AND/OR conditions. Basically parse it from natural language to a logical representation. For example, CMPT225 should have this
 "(CMPT225, CMPT295, CMPT201), (CMPT225, CMPT295, ENSC351), (CMPT225, ENSC254, CMPT201), (CMPT225, ENSC254, ENSC351)"
 remove any grade requirements or words that dont fit the "XXX####" format where XXX is department and ### is coursenumber, so remove things like bc 12 math and grade requirements. 
+also notice on MATH292, there is no or on the second semicolon so its 152 or 155 or 158 and 232 or 240
 
 Key Rules Applied:
 AND conditions → Comma-separated within a single group (A,B) = A AND B required.
