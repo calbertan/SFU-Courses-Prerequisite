@@ -188,4 +188,12 @@ def visualize_graph(parent, course_graph, selected_course, on_click):
                     break
 
     canvas.mpl_connect("button_press_event", on_node_click)
+    canvas_widget.update_idletasks()   # Force Tk to layout
+    canvas_widget.config(width=1000, height=800)  # Explicit canvas size
+    canvas.draw()
+
+    # This ensures the frame doesn't collapse on low-DPI or early-render
+    graph_frame.update_idletasks()
+    graph_frame.config(width=1000, height=800)  
+
     return graph_frame
