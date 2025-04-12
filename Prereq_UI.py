@@ -20,14 +20,9 @@ except:
 # Load dataset
 file_path = "sfu_courses_dataset.csv"
 df = pd.read_csv(file_path)
+completed_courses_list = []
+completed_set = ()
 
-completed_courses = pd.read_csv("completed_courses.csv")
-completed_set = set(zip(completed_courses['Department'], completed_courses['Course Number']))
-completed_courses_list = [f"{dept}{code}" for dept, code in completed_set]
-df['has_completed'] = df.apply(
-    lambda row: (row['Department'], row['Course Number']) in completed_set,
-    axis=1
-)
 
 df['Parsed Prerequisites'] = df['Parsed Prerequisites'].fillna('No Prerequisites')  # Replace NaN
 df['Parsed Prerequisites'] = df['Parsed Prerequisites'].apply(
@@ -38,6 +33,15 @@ df['Prerequisites'] = df['Prerequisites'].fillna('No Prerequisites')  # Replace 
 df['Prerequisites'] = df['Prerequisites'].apply(
     lambda x: 'N/A' if str(x).strip() == '' else x
 )
+
+def update_completed_courses():
+    completed_courses = pd.read_csv("completed_courses.csv")
+    completed_set = set(zip(completed_courses['Department'], completed_courses['Course Number']))
+    completed_courses_list = [f"{dept}{code}" for dept, code in completed_set]
+    df['has_completed'] = df.apply(
+        lambda row: (row['Department'], row['Course Number']) in completed_set,
+        axis=1
+    )
 
 def on_close():
     print("Window closed")
@@ -403,6 +407,7 @@ def show_prerequisites(event=None, course_name=None):
             completed_courses_list.clear()
             completed_courses_list.extend(f"{row[0].strip()}{row[1].strip()}" for row in reader)
 
+        update_completed_courses()
         update_table()
 
 
@@ -413,6 +418,8 @@ def show_prerequisites(event=None, course_name=None):
     # Visualizing graph
     # Create a subgraph for the selected course and its descendants
     visualize_graph(popup_window, course_graph, selected_course, show_prerequisites)
+
+update_completed_courses()
 
 # Create a frame for the filter buttons
 filter_frame = tk.Frame(root)
