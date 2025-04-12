@@ -335,13 +335,19 @@ def show_prerequisites(event=None, course_name=None):
         if match:
             dept = match.group(1)
             num = match.group(2)
-            # Convert both to strings and strip whitespace for comparison
-            course_row = df[
-                (df['Department'] == dept) & 
-                (df['Course Number'].astype(str).str.strip() == num)
-            ]
-            actual_prerequisites = course_row.iloc[0]['Prerequisites'] if not course_row.empty else "N/A"
-            parsed_prerequisites = course_row.iloc[0]['Parsed Prerequisites'] if not course_row.empty else "N/A"
+            
+            #selects the item
+            selected_item = None
+            for item in tree.get_children():
+                if (tree.item(item, "values")[0] == dept and 
+                    tree.item(item, "values")[1] == num):
+                    selected_item = item
+                    break
+                
+            if selected_item:
+                actual_prerequisites = tree.item(selected_item, "tags")[0]
+                parsed_prerequisites = tree.item(selected_item, "tags")[1]
+                selected_course = tree.item(selected_item, "values")[0] + tree.item(selected_item, "values")[1]
         else:
             parsed_prerequisites = "N/A"
             actual_prerequisites = "N/A"
