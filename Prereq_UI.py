@@ -378,7 +378,7 @@ def show_prerequisites(event=None, course_name=None):
                 write = csv.writer(file)
                 write.writerows(temp_rows)
 
-            messagebox.showinfo("Removed", f"{selected_course} has been removed from completed courses.")
+            messagebox.showinfo("Removed", f"{selected_course} has been removed from completed courses.", parent=popup_window)
             toggle_button.config(text="Mark as Completed")
         else:
 
@@ -387,7 +387,7 @@ def show_prerequisites(event=None, course_name=None):
                 write = csv.writer(file)
                 write.writerow([dept, num])
 
-            messagebox.showinfo("Added", f"{selected_course} has been marked as completed.")
+            messagebox.showinfo("Added", f"{selected_course} has been marked as completed.", parent=popup_window)
             toggle_button.config(text="Remove from Completed")
 
         with open("completed_courses.csv") as file:
