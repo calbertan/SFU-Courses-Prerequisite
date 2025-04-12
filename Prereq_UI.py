@@ -294,8 +294,16 @@ def show_highlighted_prerequisites(parent, prerequisites_text):
             end_idx = f"{start_idx}+{len(course)}c"
             text_widget.tag_add("bold", start_idx, end_idx)
             start_idx = end_idx
+
+    # Calculate required height based on character count / 720
+    font = tk.font.Font(family="Arial", size=12)
+    avg_char_width = font.measure("0")  # Average character width in pixels
+    chars_per_line = 1080 // avg_char_width
     
-    # Make read-only
+    total_chars = len(prerequisites_text)
+    required_lines = max(1, (total_chars // chars_per_line))
+    text_widget.config(height=required_lines)
+    
     text_widget.config(state=tk.DISABLED)
     
     return text_widget

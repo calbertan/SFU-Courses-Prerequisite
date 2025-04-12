@@ -27,8 +27,7 @@ MATH,292,Prerequisites will be specified according to the particular topic or to
 I need you to update the prequisite column to groups the prerequisites properly based on the AND/OR conditions. Basically parse it from natural language to a logical representation. For example, CMPT225 should have this
 "(CMPT225, CMPT295, CMPT201), (CMPT225, CMPT295, ENSC351), (CMPT225, ENSC254, CMPT201), (CMPT225, ENSC254, ENSC351)"
 remove any grade requirements or words that dont fit the "XXX####" format where XXX is department and ### is coursenumber, so remove things like bc 12 math and grade requirements. 
-also notice on MATH292, there is no or on the second semicolon so its 152 or 155 or 158 and 232 or 240
-
+also notice on MATH292, there is no or on the second semicolon so its 152 or 155 or 158 and 232 or 240. I am expecting (MATH152, MATH232),(MATH152, MATH292),(MATH155, MATH232),(MATH155, MATH292),(MATH158, MATH232),(MATH158, MATH2392)
 Key Rules Applied:
 AND conditions → Comma-separated within a single group (A,B) = A AND B required.
 OR conditions → Separate groups (A),(B) = A OR B satisfies.
@@ -56,14 +55,8 @@ CMPT,310,"(CMPT225,MACM101),(CMPT225,ENSC251,ENSC252)"
 CMPT,318,"(CMPT225)"
 CMPT,340,"(CMPT125),(CMPT126),(CMPT128),(CMPT135),(CMPT102)"
 CMPT,353,"(CMPT225,BUS232),(CMPT225,STAT201),(CMPT225,STAT203),(CMPT225,STAT205),(CMPT225,STAT270),(CMPT225,STAT271),(CMPT225,ENSC280),(CMPT225,MSE210),(CMPT225,SEE241)"
-CMPT,354,"(CMPT225,MACM101),(CMPT225,ENSC251,ENSC252)"
-CMPT,361,"(CMPT225,MATH232),(CMPT225,MATH240)"
-CMPT,362,"(CMPT225)"
-CMPT,363,"(CMPT225,CMPT263)"
-CMPT,365,"(CMPT225)"
-CMPT,371,"(CMPT225,MATH150),(CMPT225,MATH151)"
-CMPT,372,"(CMPT225,CMPT272)"
-CMPT,373,"(CMPT276),(CMPT275)"
 CMPT,379,"(MACM201,CMPT295,CMPT225),(MACM201,ENSC215,CMPT225),(CMPT210,CMPT295,CMPT225),(CMPT210,ENSC215,CMPT225)"
 CMPT,383,"(CMPT225,MACM101),(CMPT225,ENSC251,ENSC252)"
 CMPT,384,"(CMPT225,MACM101),(CMPT225,ENSC251,ENSC252)"
+MATH,260,"(MATH152,MATH232),(MATH152,MATH240),(MATH155,MATH232),(MATH155,MATH240),(MATH158,MATH232),(MATH158,MATH240)"
+MATH,292,"()"
