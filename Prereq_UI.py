@@ -2,10 +2,12 @@ import pandas as pd
 import numpy as np
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 import ctypes
 import networkx as nx
 import matplotlib.pyplot as plt
 import re
+import csv
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from Graph import custom_layout, get_graph, visualize_graph
 
@@ -356,6 +358,49 @@ def show_prerequisites(event=None, course_name=None):
         label = tk.Label(popup_window, text="Possible combinations (Bolded courses means you have completed them)", font=("Arial", 12, "bold"))
         label.pack(padx=5, anchor="w")
         show_highlighted_prerequisites(popup_window, parsed_prerequisites)
+
+
+    # Add a course to completed_courses
+    item = tree.item(selected_item)
+    dept, num = item["values"][0], item["values"][1]
+    def add_remove_course():
+
+        if selected_course in completed_courses_list:
+            # Remove from list
+            temp_rows = []
+            with open("completed_courses.csv") as file:
+                read = csv.reader(file)
+                for row in read:
+                    if not (row[0] == dept and row[1] == str(num)):
+                        temp_rows.append(row)
+            
+            with open("completed_courses.csv", 'w', newline='') as file:
+                write = csv.writer(file)
+                write.writerows(temp_rows)
+
+            messagebox.showinfo("Removed", f"{selected_course} has been removed from completed courses.")
+            toggle_button.config(text="Mark as Completed")
+        else:
+
+            # Add to List
+            with open("completed_courses.csv", mode='a', newline="") as file:
+                write = csv.writer(file)
+                write.writerow([dept, num])
+
+            messagebox.showinfo("Added", f"{selected_course} has been marked as completed.")
+            toggle_button.config(text="Remove from Completed")
+
+        with open("completed_courses.csv") as file:
+            reader = csv.reader(file)
+            completed_courses_list.clear()
+            completed_courses_list.extend(f"{row[0].strip()}{row[1].strip()}" for row in reader)
+
+        update_table()
+
+
+    initial_text = "Remove from Completed" if selected_course in completed_courses_list else "Mark as Completed"
+    toggle_button = tk.Button(popup_window, text=initial_text, command=add_remove_course)
+    toggle_button.pack(pady=5, anchor="w")
     
     # Visualizing graph
     # Create a subgraph for the selected course and its descendants
