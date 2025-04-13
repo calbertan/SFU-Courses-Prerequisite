@@ -27,7 +27,6 @@ def get_graph(df):
 	return course_graph
 
 # Custom graph layout based on depth
-# graph:
 def custom_layout(graph, selected_course, prerequisites):
     pos = {}
     pos[selected_course] = (0, 0)
