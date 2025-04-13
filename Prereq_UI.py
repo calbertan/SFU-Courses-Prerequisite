@@ -299,6 +299,7 @@ def show_highlighted_prerequisites(parent, prerequisites_text):
             text_widget.tag_add("bold", start_idx, end_idx)
             start_idx = end_idx
 
+    # Calculate required height based on character count / 720
     font = tk.font.Font(family="Arial", size=12)
     avg_char_width = font.measure("0")  # Average character width in pixels
     chars_per_line = 1080 // avg_char_width
