@@ -323,6 +323,7 @@ def show_prerequisites(event=None, course_name=None):
     if event is not None:
         # Case when called from table double-click
         selected_item = tree.selection()
+        
         if selected_item:
             actual_prerequisites = tree.item(selected_item, "tags")[0]
             parsed_prerequisites = tree.item(selected_item, "tags")[1]
@@ -330,6 +331,8 @@ def show_prerequisites(event=None, course_name=None):
     else:
         # Case when called from unlocked course click
         selected_course = course_name
+        actual_prerequisites = "N/A"
+        parsed_prerequisites = "N/A"
         # Use regex to split letters and numbers
         match = re.match(r"([A-Za-z]+)(\d+[A-Za-z]*)", selected_course)
         if match:
@@ -379,8 +382,11 @@ def show_prerequisites(event=None, course_name=None):
 
 
     # Add a course to completed_courses
-    item = tree.item(selected_item)
-    dept, num = item["values"][0], item["values"][1]
+    
+    if selected_item is not None:
+        item = tree.item(selected_item)
+        dept, num = item["values"][0], item["values"][1]
+    
     def add_remove_course():
 
         if selected_course in completed_courses_list:
