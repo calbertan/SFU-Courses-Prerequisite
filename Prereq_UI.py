@@ -35,6 +35,7 @@ df['Prerequisites'] = df['Prerequisites'].apply(
 )
 
 def update_completed_courses():
+    global completed_set, completed_courses_list
     completed_courses = pd.read_csv("completed_courses.csv")
     completed_set = set(zip(completed_courses['Department'], completed_courses['Course Number']))
     completed_courses_list = [f"{dept}{code}" for dept, code in completed_set]
