@@ -5,6 +5,13 @@ This project aims to address that gap by extracting course data from SFU's cours
 
 ![graph_sample](images/graph_sample.png "Graph Sample Image")
 
+## Features
+- UI that displays SFU courses across departments
+- Add / remove courses you have completed via UI or .csv
+- Show dependency graph between courses
+- See priority value of a given class
+- filter class based on your completed class
+
 ## Required packages
 Run the command below to install the required dependencies
 ```
